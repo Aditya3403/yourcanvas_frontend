@@ -155,6 +155,7 @@ export default function CanvasDesigner() {
     try {
       new URL(url);
     } catch (err) {
+      console.log(err)
       alert('Please enter a valid URL');
       return;
     }
