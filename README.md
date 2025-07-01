@@ -98,9 +98,4 @@ You can deploy this app using **Vercel**, **Netlify**, or any static hosting pro
 
 This project is licensed under the [MIT License](LICENSE).
 
----
 
-## 👤 Author
-
-**Aditya Bansal**  
-[LinkedIn](https://linkedin.com/in/your-profile) • [GitHub](https://github.com/yourusername)
