@@ -49,7 +49,7 @@ YOURCANVAS_FRONTEND/
 
 ```bash
 # Clone the repository
-git clone [https://github.com/yourusername/YOURCANVAS_FRONTEND.git](https://github.com/Aditya3403/yourcanvas_frontend.git)
+git clone (https://github.com/Aditya3403/yourcanvas_frontend.git)
 
 # Move into the directory
 cd client
@@ -78,7 +78,6 @@ Create a `.env` file in the root with:
 NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
 
 ---
-
 
 
 ## 💡 Features
