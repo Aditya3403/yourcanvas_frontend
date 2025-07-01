@@ -3,13 +3,23 @@
 import { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import Dropzone from '../components/Dropzone';
+import Image from 'next/image';
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 type CanvasElement = {
-  type: string;
+  type: 'rectangle' | 'circle' | 'text' | 'image';
   x: number;
   y: number;
-  [key: string]: any;
+  width?: number;
+  height?: number;
+  color?: string;
+  radius?: number;
+  text?: string;
+  font?: string;
+  size?: number;
+  path?: string;
+  url?: string;
 };
 
 type Canvas = {
@@ -24,6 +34,7 @@ export default function CanvasDesigner() {
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [activeTab, setActiveTab] = useState('shapes');
   const [exporting, setExporting] = useState(false);
+  
   const canvasWidthRef = useRef<HTMLInputElement>(null);
   const canvasHeightRef = useRef<HTMLInputElement>(null);
   const rectangleFormRef = useRef<HTMLFormElement>(null);
@@ -31,7 +42,6 @@ export default function CanvasDesigner() {
   const textFormRef = useRef<HTMLFormElement>(null);
   const imageUrlFormRef = useRef<HTMLFormElement>(null);
 
-  // Initialize canvas
   const initCanvas = (e: React.FormEvent) => {
     e.preventDefault();
     const width = parseInt(canvasWidthRef.current?.value || '0');
@@ -54,7 +64,6 @@ export default function CanvasDesigner() {
       });
   };
   
-  // Add rectangle
   const addRectangle = (e: React.FormEvent) => {
     e.preventDefault();
     const form = rectangleFormRef.current;
@@ -80,7 +89,6 @@ export default function CanvasDesigner() {
       });
   };
   
-  // Add circle
   const addCircle = (e: React.FormEvent) => {
     e.preventDefault();
     const form = circleFormRef.current;
@@ -105,7 +113,6 @@ export default function CanvasDesigner() {
       });
   };
   
-  // Add text
   const addText = (e: React.FormEvent) => {
     e.preventDefault();
     const form = textFormRef.current;
@@ -132,98 +139,92 @@ export default function CanvasDesigner() {
       });
   };
   
- const addImageUrl = (e: React.FormEvent) => {
-  e.preventDefault();
-  const form = imageUrlFormRef.current;
-  if (!form) return;
-  
-  const urlInput = form.elements.namedItem('url') as HTMLInputElement;
-  const url = urlInput.value.trim();
-  
-  // Basic validation
-  if (!url) {
-    alert('Please enter an image URL');
-    return;
-  }
+  const addImageUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = imageUrlFormRef.current;
+    if (!form) return;
+    
+    const urlInput = form.elements.namedItem('url') as HTMLInputElement;
+    const url = urlInput.value.trim();
+    
+    if (!url) {
+      alert('Please enter an image URL');
+      return;
+    }
 
-  // Check if URL has an image extension
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-  const hasValidExtension = imageExtensions.some(ext => 
-    url.toLowerCase().endsWith(ext)
-  );
-  
-  if (!hasValidExtension) {
-    alert('Please enter a valid image URL (jpg, jpeg, png, gif, webp)');
-    return;
-  }
-
-  const data = {
-    x: (form.elements.namedItem('x') as HTMLInputElement).value,
-    y: (form.elements.namedItem('y') as HTMLInputElement).value,
-    width: (form.elements.namedItem('width') as HTMLInputElement).value,
-    height: (form.elements.namedItem('height') as HTMLInputElement).value,
-    url: url
-  };
-  
-  setExporting(true);
-  
-  axios.post(`${BACKEND_URL}/api/canvas/add/image-url`, data)
-    .then(res => {
-      setElements(res.data.canvas.elements);
-      // Force refresh preview with cache busting
-      setPreviewUrl(`${BACKEND_URL}/api/canvas/preview?t=${Date.now()}`);
-      form.reset();
-    })
-    .catch(err => {
-      console.error('Error adding image:', err);
-      const errorMsg = err.response?.data?.error || 'Failed to add image from URL';
-      alert(errorMsg);
-    })
-    .finally(() => {
-      setExporting(false);
-    });
-};
-  
-  const handleImageDrop = useCallback(async (acceptedFiles: File[]) => {
-  const file = acceptedFiles[0];
-  if (!file) return;
-
-  const form = imageUrlFormRef.current;
-  if (!form) return;
-
-  const x = (form.elements.namedItem('x') as HTMLInputElement).value;
-  const y = (form.elements.namedItem('y') as HTMLInputElement).value;
-  const width = (form.elements.namedItem('width') as HTMLInputElement).value;
-  const height = (form.elements.namedItem('height') as HTMLInputElement).value;
-
-  const formData = new FormData();
-  formData.append('image', file);
-  formData.append('x', x);
-  formData.append('y', y);
-  formData.append('width', width);
-  formData.append('height', height);
-  
-  try {
+    try {
+      new URL(url);
+    } catch (err) {
+      alert('Please enter a valid URL');
+      return;
+    }
+    
+    const data = {
+      x: (form.elements.namedItem('x') as HTMLInputElement).value,
+      y: (form.elements.namedItem('y') as HTMLInputElement).value,
+      width: (form.elements.namedItem('width') as HTMLInputElement).value,
+      height: (form.elements.namedItem('height') as HTMLInputElement).value,
+      url: url
+    };
+    
     setExporting(true);
     
-    const res = await axios.post(`${BACKEND_URL}/api/canvas/add/image-upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    axios.post(`${BACKEND_URL}/api/canvas/add/image-url`, data)
+      .then(res => {
+        setElements(res.data.canvas.elements);
+        setPreviewUrl(`${BACKEND_URL}/api/canvas/preview?t=${Date.now()}`);
+        form.reset();
+      })
+      .catch(err => {
+        console.error('Error adding image:', err);
+        const errorMsg = err.response?.data?.error || 'Failed to add image from URL';
+        alert(errorMsg + (err.response?.data?.details ? `\n\nDetails: ${err.response.data.details}` : ''));
+      })
+      .finally(() => {
+        setExporting(false);
+      });
+  };
+  
+  const handleImageDrop = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    const form = imageUrlFormRef.current;
+    if (!form) return;
+
+    const x = (form.elements.namedItem('x') as HTMLInputElement).value;
+    const y = (form.elements.namedItem('y') as HTMLInputElement).value;
+    const width = (form.elements.namedItem('width') as HTMLInputElement).value;
+    const height = (form.elements.namedItem('height') as HTMLInputElement).value;
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('x', x);
+    formData.append('y', y);
+    formData.append('width', width);
+    formData.append('height', height);
     
-    setElements(res.data.canvas.elements);
-    setPreviewUrl(`${BACKEND_URL}/api/canvas/preview?t=${Date.now()}`);
-    setTimeout(() => {
-      setPreviewUrl(`${BACKEND_URL}/api/canvas/preview?t=${Date.now() + 1}`);
-    }, 500);
-  } catch (err) {
-    console.error('Error uploading image:', err);
-    alert('Failed to upload image');
-  } finally {
-    setExporting(false);
-  }
-}, []);
+    try {
+      setExporting(true);
+      
+      const res = await axios.post(`${BACKEND_URL}/api/canvas/add/image-upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      setElements(res.data.canvas.elements);
+      setPreviewUrl(`${BACKEND_URL}/api/canvas/preview?t=${Date.now()}`);
+      setTimeout(() => {
+        setPreviewUrl(`${BACKEND_URL}/api/canvas/preview?t=${Date.now() + 1}`);
+      }, 500);
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      alert('Failed to upload image');
+    } finally {
+      setExporting(false);
+    }
+  }, []);
 
   const updatePreview = useCallback(() => {
     if (!canvas) return;
@@ -250,7 +251,6 @@ export default function CanvasDesigner() {
       </header>
       
       <div className="container mx-auto flex flex-col lg:flex-row p-6 gap-6">
-        {/* Sidebar */}
         <div className="w-full lg:w-1/3 bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
           <div className="mb-8">
             <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
@@ -294,7 +294,6 @@ export default function CanvasDesigner() {
             </form>
           </div>
           
-          {/* Tabs */}
           <div className="flex border-b border-gray-200 mb-6">
             <button 
               className={`flex-1 py-3 font-medium text-sm uppercase tracking-wider flex items-center justify-center ${activeTab === 'shapes' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
@@ -325,7 +324,6 @@ export default function CanvasDesigner() {
             </button>
           </div>
           
-          {/* Tab Content */}
           <div className="transition-all duration-300">
             {activeTab === 'shapes' && (
               <div className="space-y-8 animate-fade-in">
@@ -658,7 +656,6 @@ export default function CanvasDesigner() {
           </div>
         </div>
         
-        {/* Preview Area */}
         <div className="w-full lg:w-2/3 bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-gray-800 flex items-center">
@@ -682,10 +679,13 @@ export default function CanvasDesigner() {
             <div className="animate-fade-in">
               <div className="border-2 border-dashed border-gray-200 bg-white rounded-lg overflow-auto flex items-center justify-center min-h-[300px]">
                 {previewUrl ? (
-                  <img 
-                    src={previewUrl} 
-                    alt="Canvas Preview" 
+                  <Image 
+                    src={previewUrl}
+                    alt="Canvas Preview"
+                    width={canvas.width}
+                    height={canvas.height}
                     className="max-w-full h-auto shadow-sm"
+                    unoptimized
                   />
                 ) : (
                   <div className="text-gray-400 p-8 text-center">
