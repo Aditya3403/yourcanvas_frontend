@@ -74,16 +74,12 @@ App will run on: `http://localhost:3000` by default.
 
 Create a `.env` file in the root with:
 
-```bash
+```
 NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
 
 ---
 
-## 📤 Deployment
 
-You can deploy this app using **Vercel**, **Netlify**, or any static hosting provider that supports Next.js.
-
----
 
 ## 💡 Features
 
@@ -97,5 +93,3 @@ You can deploy this app using **Vercel**, **Netlify**, or any static hosting pro
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
-
-
