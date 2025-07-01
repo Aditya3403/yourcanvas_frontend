@@ -62,7 +62,7 @@ npm install
 
 ## 🏁 Running the Development Server
 
-```bash
+```
 npm run dev
 ```
 
