@@ -140,19 +140,23 @@ export default function CanvasDesigner() {
   const urlInput = form.elements.namedItem('url') as HTMLInputElement;
   const url = urlInput.value.trim();
   
+  // Basic validation
   if (!url) {
     alert('Please enter an image URL');
     return;
   }
+
+  // Check if URL has an image extension
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+  const hasValidExtension = imageExtensions.some(ext => 
+    url.toLowerCase().endsWith(ext)
+  );
   
-  try {
-    new URL(url);
-  } catch (err) {
-    console.log(err)
-    alert('Please enter a valid URL');
+  if (!hasValidExtension) {
+    alert('Please enter a valid image URL (jpg, jpeg, png, gif, webp)');
     return;
   }
-  
+
   const data = {
     x: (form.elements.namedItem('x') as HTMLInputElement).value,
     y: (form.elements.namedItem('y') as HTMLInputElement).value,
@@ -161,18 +165,19 @@ export default function CanvasDesigner() {
     url: url
   };
   
-  setExporting(true); 
+  setExporting(true);
   
   axios.post(`${BACKEND_URL}/api/canvas/add/image-url`, data)
     .then(res => {
       setElements(res.data.canvas.elements);
+      // Force refresh preview with cache busting
       setPreviewUrl(`${BACKEND_URL}/api/canvas/preview?t=${Date.now()}`);
       form.reset();
     })
     .catch(err => {
       console.error('Error adding image:', err);
       const errorMsg = err.response?.data?.error || 'Failed to add image from URL';
-      alert(errorMsg + (err.response?.data?.details ? `\n\nDetails: ${err.response.data.details}` : ''));
+      alert(errorMsg);
     })
     .finally(() => {
       setExporting(false);
