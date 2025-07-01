@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback } from 'react';
 import { useDropzone, type DropzoneOptions } from 'react-dropzone';
 
 interface DropzoneProps {
